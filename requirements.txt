@@ -1,0 +1,12 @@
+flake8
+pytest
+docker
+flask
+torch
+numpy
+scikit-learn
+librosa==0.10.1
+matplotlib==3.8.2
+seaborn==0.13.0
+Werkzeug==3.0.1
+soundfile==0.12.1

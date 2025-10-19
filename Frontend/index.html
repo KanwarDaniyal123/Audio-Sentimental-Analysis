@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Sentiment Analyzer</title>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #166088;
+            --accent-color: #4cb5ae;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .subtitle {
+            color: var(--secondary-color);
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+        
+        .main-content {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .upload-section {
+            margin-bottom: 2rem;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: none;
+            transition: 0.3s;
+            font-weight: 500;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        
+        .tab.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 1.5rem;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        input[type="file"], input[type="url"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--accent-color);
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #3a9a94;
+        }
+        
+        .btn-analyze {
+            background-color: var(--primary-color);
+            margin-top: 1rem;
+        }
+        
+        .btn-analyze:hover {
+            background-color: #3a5a84;
+        }
+        
+        .results-section {
+            display: none;
+            text-align: center;
+        }
+        
+        .results-section.active {
+            display: block;
+        }
+        
+        .emotion-result {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 2rem 0;
+        }
+        
+        .emotion-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .emotion-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .neutral { color: #6c757d; }
+        .calm { color: #4a86e8; }
+        .happy { color: #f1c232; }
+        .sad { color: #6fa8dc; }
+        .angry { color: #cc0000; }
+        .fearful { color: #9900ff; }
+        .disgust { color: #38761d; }
+        .surprised { color: #ff9900; }
+        
+        .emotion-description {
+            font-size: 1.1rem;
+            margin-top: 1rem;
+            color: #555;
+        }
+        
+        .waveform {
+            width: 100%;
+            height: 100px;
+            background-color: var(--light-color);
+            margin: 2rem 0;
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .waveform-img {
+            width: 100%;
+            height: 100%;
+            background-image: url('/api/placeholder/1000/100');
+            background-size: cover;
+            opacity: 0.7;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .info-section {
+            background-color: #e9f7ff;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        h3 {
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .emotions-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .emotions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .emotion-pill {
+            background-color: white;
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #777;
+            font-size: 0.9rem;
+        }
+        
+        /* Add model selection styling */
+        .model-selection {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .model-selection label {
+            margin-right: 1rem;
+            font-weight: normal;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Audio Sentiment Analyzer</h1>
+            <p class="subtitle">Analyze emotions in speech using machine learning</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="upload-section">
+                <div class="tabs">
+                    <button class="tab active" onclick="openTab(event, 'uploadTab')">Upload Audio</button>
+                    <button class="tab" onclick="openTab(event, 'urlTab')">Audio URL</button>
+                    <button class="tab" onclick="openTab(event, 'recordTab')">Record Audio</button>
+                </div>
+                
+                <div id="uploadTab" class="tab-content active">
+                    <div class="input-group">
+                        <label for="audioFile">Choose an audio file:</label>
+                        <input type="file" id="audioFile" accept="audio/*">
+                    </div>
+                    <div class="model-selection">
+                        <label>
+                            <input type="radio" name="model-type-upload" value="rf" checked> Random Forest
+                        </label>
+                        <label>
+                            <input type="radio" name="model-type-upload" value="nn"> Neural Network
+                        </label>
+                    </div>
+                    <button class="btn btn-analyze" onclick="analyzeAudio('upload')">Analyze Emotion</button>
+                </div>
+                
+                <div id="urlTab" class="tab-content">
+                    <div class="input-group">
+                        <label for="audioUrl">Enter audio URL:</label>
+                        <input type="url" id="audioUrl" placeholder="https://example.com/audio.mp3">
+                    </div>
+                    <div class="model-selection">
+                        <label>
+                            <input type="radio" name="model-type-url" value="rf" checked> Random Forest
+                        </label>
+                        <label>
+                            <input type="radio" name="model-type-url" value="nn"> Neural Network
+                        </label>
+                    </div>
+                    <button class="btn btn-analyze" onclick="analyzeAudio('url')">Analyze Emotion</button>
+                </div>
+                
+                <div id="recordTab" class="tab-content">
+                    <div style="text-align: center;">
+                        <button class="btn" id="startRecord">Start Recording</button>
+                        <button class="btn" id="stopRecord" style="display: none;">Stop Recording</button>
+                        <div id="recordingStatus" style="margin-top: 1rem; font-style: italic;"></div>
+                        <audio id="recordedAudio" controls style="display: none; margin-top: 1rem; width: 100%;"></audio>
+                    </div>
+                    <div class="model-selection">
+                        <label>
+                            <input type="radio" name="model-type-record" value="rf" checked> Random Forest
+                        </label>
+                        <label>
+                            <input type="radio" name="model-type-record" value="nn"> Neural Network
+                        </label>
+                    </div>
+                    <button class="btn btn-analyze" id="analyzeRecording" style="display: none;" onclick="analyzeAudio('record')">Analyze Recorded Audio</button>
+                </div>
+            </div>
+            
+            <div class="loading" id="loadingSection">
+                <div class="spinner"></div>
+                <p>Analyzing audio...</p>
+            </div>
+            
+            <div class="results-section" id="resultsSection">
+                <div class="emotion-card">
+                    <div class="emotion-icon" id="emotionIcon">😐</div>
+                    <div class="emotion-result" id="emotionResult">Neutral</div>
+                    <div class="waveform">
+                        <div class="waveform-img"></div>
+                    </div>
+                    <div class="emotion-description" id="emotionDescription">
+                        This audio contains speech with a neutral emotional tone.
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="resetAnalyzer()">Analyze Another Audio</button>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h3>About This Analyzer</h3>
+            <p>This audio sentiment analyzer uses machine learning to detect emotions in speech. It can recognize the following emotions:</p>
+            
+            <div class="emotions-grid">
+                <div class="emotion-pill neutral">Neutral</div>
+                <div class="emotion-pill calm">Calm</div>
+                <div class="emotion-pill happy">Happy</div>
+                <div class="emotion-pill sad">Sad</div>
+                <div class="emotion-pill angry">Angry</div>
+                <div class="emotion-pill fearful">Fearful</div>
+                <div class="emotion-pill disgust">Disgust</div>
+                <div class="emotion-pill surprised">Surprised</div>
+            </div>
+            
+            <p style="margin-top: 1.5rem;">The model was trained on the RAVDESS dataset using a combination of acoustic features and a genetic algorithm for feature selection.</p>
+        </div>
+        
+        <footer>
+            <p>© 2025 Audio Sentiment Analysis Project</p>
+        </footer>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+        
+        // Audio recording functionality
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordedBlob = null;
+
+        document.getElementById('startRecord').addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = () => {
+                    recordedBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(recordedBlob);
+                    const audio = document.getElementById('recordedAudio');
+                    audio.src = audioUrl;
+                    audio.style.display = 'block';
+                    document.getElementById('analyzeRecording').style.display = 'block';
+                };
+                
+                mediaRecorder.start();
+                audioChunks = [];
+                document.getElementById('startRecord').style.display = 'none';
+                document.getElementById('stopRecord').style.display = 'inline-block';
+                document.getElementById('recordingStatus').textContent = 'Recording...';
+                
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                document.getElementById('recordingStatus').textContent = 'Error: Could not access microphone';
+            }
+        });
+        
+        document.getElementById('stopRecord').addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                document.getElementById('startRecord').style.display = 'inline-block';
+                document.getElementById('stopRecord').style.display = 'none';
+                document.getElementById('recordingStatus').textContent = 'Recording completed';
+            }
+        });
+        
+        // Actual emotion analysis
+        function analyzeAudio(type) {
+            // Show loading
+            document.getElementById('loadingSection').classList.add('active');
+            document.getElementById('resultsSection').classList.remove('active');
+            
+            const formData = new FormData();
+            formData.append('source_type', type);
+            
+            // Get the selected model type
+            let modelType = 'rf'; // Default to Random Forest
+            if (type === 'upload') {
+                const modelButtons = document.getElementsByName('model-type-upload');
+                for (const button of modelButtons) {
+                    if (button.checked) {
+                        modelType = button.value;
+                        break;
+                    }
+                }
+                
+                const fileInput = document.getElementById('audioFile');
+                if (!fileInput.files[0]) {
+                    alert('Please select an audio file');
+                    document.getElementById('loadingSection').classList.remove('active');
+                    return;
+                }
+                formData.append('audio', fileInput.files[0]);
+            } 
+            else if (type === 'url') {
+                const modelButtons = document.getElementsByName('model-type-url');
+                for (const button of modelButtons) {
+                    if (button.checked) {
+                        modelType = button.value;
+                        break;
+                    }
+                }
+                
+                const url = document.getElementById('audioUrl').value;
+                if (!url) {
+                    alert('Please enter an audio URL');
+                    document.getElementById('loadingSection').classList.remove('active');
+                    return;
+                }
+                formData.append('url', url);
+            } 
+            else if (type === 'record') {
+                const modelButtons = document.getElementsByName('model-type-record');
+                for (const button of modelButtons) {
+                    if (button.checked) {
+                        modelType = button.value;
+                        break;
+                    }
+                }
+                
+                if (!recordedBlob) {
+                    alert('Please record audio first');
+                    document.getElementById('loadingSection').classList.remove('active');
+                    return;
+                }
+                formData.append('audio', recordedBlob);
+            }
+            
+            // Add the selected model type to the form data
+            formData.append('model_type', modelType);
+            
+            // Send to server
+            fetch('/analyze', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Server returned an error');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loading, show results
+                document.getElementById('loadingSection').classList.remove('active');
+                document.getElementById('resultsSection').classList.add('active');
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                // Update results with the actual prediction
+                document.getElementById('emotionResult').textContent = 
+                    data.emotion.charAt(0).toUpperCase() + data.emotion.slice(1);
+                document.getElementById('emotionIcon').textContent = data.icon;
+                document.getElementById('emotionDescription').textContent = data.description;
+                
+                // Add emotion class to icon
+                const iconElement = document.getElementById('emotionIcon');
+                iconElement.className = 'emotion-icon';
+                iconElement.classList.add(data.emotion.toLowerCase());
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loadingSection').classList.remove('active');
+                alert('Error: ' + error.message);
+            });
+        }
+        
+        // Reset the analyzer
+        function resetAnalyzer() {
+            document.getElementById('resultsSection').classList.remove('active');
+            document.getElementById('audioFile').value = '';
+            document.getElementById('audioUrl').value = '';
+            document.getElementById('recordedAudio').style.display = 'none';
+            document.getElementById('analyzeRecording').style.display = 'none';
+            document.getElementById('recordingStatus').textContent = '';
+            recordedBlob = null;
+        }
+    </script>
+</body>
+</html>
